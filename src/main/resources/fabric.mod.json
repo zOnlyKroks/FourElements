@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "fourelements",
+  "version": "${version}",
+  "name": "FourElements",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "unlicense",
+  "icon": "",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "de.zonlykroks.fourelements.client.FourelementsClient"
+    ]
+  },
+  "mixins": [
+    "fourelements.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
