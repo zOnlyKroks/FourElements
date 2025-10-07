@@ -34,32 +34,33 @@ public class TextureReplacingQuadEmitter implements QuadEmitter {
         this.pos = pos;
         this.state = state;
 
-        SpriteAtlasTexture atlas = MinecraftClient.getInstance().getAtlasManager().getAtlasTexture(Atlases.BLOCKS);
-        this.spriteFinder = atlas.spriteFinder();
+        TextureReplacementManager manager = TextureReplacementManager.getInstance();
+        manager.initializeAtlas();
+        this.spriteFinder = manager.getSpriteFinder();
     }
 
     @Override
     public QuadEmitter emit() {
+        if (spriteFinder == null) {
+            return delegate.emit();
+        }
+
         Sprite currentSprite = spriteFinder.find(delegate);
 
         Sprite replacementSprite = TextureReplacementManager.getInstance()
                 .getReplacementSprite(blockView, pos, state, currentSprite);
 
         if (replacementSprite != null && replacementSprite != currentSprite) {
-            float[] u = new float[4];
-            float[] v = new float[4];
-
             for (int i = 0; i < 4; i++) {
-                float atlasU = delegate.u(i);
-                float atlasV = delegate.v(i);
+                float u = delegate.u(i);
+                float v = delegate.v(i);
 
-                u[i] = (atlasU - currentSprite.getMinU()) / (currentSprite.getMaxU() - currentSprite.getMinU());
-                v[i] = (atlasV - currentSprite.getMinV()) / (currentSprite.getMaxV() - currentSprite.getMinV());
-            }
+                float normalizedU = (u - currentSprite.getMinU()) / (currentSprite.getMaxU() - currentSprite.getMinU());
+                float normalizedV = (v - currentSprite.getMinV()) / (currentSprite.getMaxV() - currentSprite.getMinV());
 
-            for (int i = 0; i < 4; i++) {
-                float newU = replacementSprite.getMinU() + u[i] * (replacementSprite.getMaxU() - replacementSprite.getMinU());
-                float newV = replacementSprite.getMinV() + v[i] * (replacementSprite.getMaxV() - replacementSprite.getMinV());
+                float newU = replacementSprite.getMinU() + normalizedU * (replacementSprite.getMaxU() - replacementSprite.getMinU());
+                float newV = replacementSprite.getMinV() + normalizedV * (replacementSprite.getMaxV() - replacementSprite.getMinV());
+
                 delegate.uv(i, newU, newV);
             }
         }

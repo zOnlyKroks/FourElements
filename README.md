@@ -1,3 +1,7 @@
+# FourElements - Advanced Texture Replacement Mod
+
+A Minecraft Fabric mod that allows dynamic texture replacement based on position, neighbors, and block states.
+
 ## Installation
 
 1. Download the mod JAR file
@@ -173,7 +177,12 @@ This checks for lava at position (current + 2X, current + 0Y, current + 1Z).
 
 ### 4. BlockState Conditions
 
-React to block properties and states. This is incredibly powerful for redstone contraptions!
+React to block properties and states at any position! BlockState conditions can check:
+- The **current block** (no offset)
+- **Neighboring blocks** (using `direction`)
+- **Any relative position** (using `offsetX`, `offsetY`, `offsetZ`)
+
+This is incredibly powerful for redstone contraptions and spatial logic!
 
 #### Common Block Properties:
 - **Repeater**: `delay` (1-4), `facing` (north/south/east/west), `powered` (true/false), `locked` (true/false)
@@ -189,7 +198,7 @@ React to block properties and states. This is incredibly powerful for redstone c
 - **Torches**: `lit` (true/false)
 - **Furnaces**: `lit` (true/false), `facing`
 
-#### Example: Repeater with Specific Delay
+#### Example: Current Block - Repeater with Specific Delay
 
 ```json
 {
@@ -206,7 +215,7 @@ React to block properties and states. This is incredibly powerful for redstone c
 
 This replaces repeaters with redstone block texture when their delay is set to 4.
 
-#### Example: Open Doors
+#### Example: Current Block - Open Doors
 
 ```json
 {
@@ -220,6 +229,66 @@ This replaces repeaters with redstone block texture when their delay is set to 4
   "replacementTexture": "minecraft:block/iron_door"
 }
 ```
+
+#### Example: Check Neighbor Block State
+
+```json
+{
+  "targetBlocks": ["stone"],
+  "blockStateConditions": [
+    {
+      "property": "powered",
+      "value": "true",
+      "direction": "DOWN"
+    }
+  ],
+  "replacementTexture": "minecraft:block/redstone_block"
+}
+```
+
+This replaces stone when the block **below** is powered.
+
+#### Example: Check Block State at Custom Position
+
+```json
+{
+  "targetBlocks": ["diamond_ore"],
+  "blockStateConditions": [
+    {
+      "property": "lit",
+      "value": "true",
+      "offsetX": 2,
+      "offsetY": 0,
+      "offsetZ": -1
+    }
+  ],
+  "replacementTexture": "minecraft:block/emerald_ore"
+}
+```
+
+This checks if a block at position (current + 2X, current + 0Y, current - 1Z) has the `lit` property set to true.
+
+#### Example: Multiple BlockState Checks
+
+```json
+{
+  "targetBlocks": ["stone"],
+  "blockStateConditions": [
+    {
+      "property": "waterlogged",
+      "value": "true"
+    },
+    {
+      "property": "powered",
+      "value": "true",
+      "direction": "UP"
+    }
+  ],
+  "replacementTexture": "minecraft:block/prismarine"
+}
+```
+
+This checks if the **current block** is waterlogged AND if the block **above** is powered.
 
 ---
 

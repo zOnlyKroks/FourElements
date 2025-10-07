@@ -12,6 +12,9 @@
   "entrypoints": {
     "client": [
       "de.zonlykroks.fourelements.client.FourelementsClient"
+    ],
+    "modmenu": [
+      "de.zonlykroks.fourelements.impl.ModMenuImpl"
     ]
   },
   "mixins": [

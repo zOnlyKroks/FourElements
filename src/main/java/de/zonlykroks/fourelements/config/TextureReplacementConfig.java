@@ -12,42 +12,50 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class TextureReplacementConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger("FourElements");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_DIR = FabricLoader.getInstance().getConfigDir().resolve("fourelements");
-    private static final Path CONFIG_FILE = CONFIG_DIR.resolve("texture_replacements.json");
 
-    private final List<TextureReplacementRule> rules = new ArrayList<>();
+    private volatile List<TextureReplacementRule> rules = new ArrayList<>();
 
     public void load() {
+        load(ModConfig.getInstance().getRulesFilePath());
+    }
+
+    public void load(Path configFile) {
         try {
             if (!Files.exists(CONFIG_DIR)) {
                 Files.createDirectories(CONFIG_DIR);
                 LOGGER.info("Created FourElements config directory at: {}", CONFIG_DIR);
             }
 
-            if (!Files.exists(CONFIG_FILE)) {
-                createDefaultConfig();
-                LOGGER.info("Created default texture replacement config at: {}", CONFIG_FILE);
+            if (!Files.exists(configFile)) {
+                createDefaultConfig(configFile);
+                LOGGER.info("Created default texture replacement config at: {}", configFile);
             }
 
-            String json = Files.readString(CONFIG_FILE);
+            String json = Files.readString(configFile);
             JsonObject root = GSON.fromJson(json, JsonObject.class);
             JsonArray rulesArray = root.getAsJsonArray("rules");
 
-            rules.clear();
+            // Build new list atomically to avoid concurrent modification
+            List<TextureReplacementRule> newRules = new ArrayList<>();
             for (int i = 0; i < rulesArray.size(); i++) {
                 JsonObject ruleJson = rulesArray.get(i).getAsJsonObject();
                 TextureReplacementRule rule = parseRule(ruleJson);
-                rules.add(rule);
+                newRules.add(rule);
             }
 
-            LOGGER.info("Loaded {} texture replacement rules", rules.size());
+            // Atomically replace the rules list
+            this.rules = Collections.unmodifiableList(newRules);
+
+            LOGGER.info("Loaded {} texture replacement rules from {}", rules.size(), configFile.getFileName());
         } catch (IOException e) {
-            LOGGER.error("Failed to load texture replacement config", e);
+            LOGGER.error("Failed to load texture replacement config from {}", configFile, e);
         }
     }
 
@@ -92,7 +100,7 @@ public class TextureReplacementConfig {
         return new TextureReplacementRule(targetBlocks, positionConditions, neighborConditions, blockStateConditions, replacementTexture);
     }
 
-    private void createDefaultConfig() throws IOException {
+    private void createDefaultConfig(Path configFile) throws IOException {
         JsonObject root = new JsonObject();
         JsonArray rulesArray = new JsonArray();
 
@@ -187,12 +195,12 @@ public class TextureReplacementConfig {
         neighborConditions5.add(neighborCondition5);
         rule5.add("neighborConditions", neighborConditions5);
 
-        rule5.addProperty("replacementTexture", "fourelements:block/replacement_texture");
+        rule5.addProperty("replacementTexture", "minecraft:block/gold_block");
         rulesArray.add(rule5);
 
         root.add("rules", rulesArray);
 
-        Files.writeString(CONFIG_FILE, GSON.toJson(root));
+        Files.writeString(configFile, GSON.toJson(root));
     }
 
     public List<TextureReplacementRule> getRules() {
