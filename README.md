@@ -1,15 +1,3 @@
-# FourElements - Advanced Texture Replacement Mod
-
-A powerful Minecraft Fabric mod that allows dynamic texture replacement based on position, neighbors, and block states. Perfect for creating context-aware textures and advanced resource pack effects.
-
-## Features
-
-- **Position-based texture replacement** - Replace textures based on block coordinates
-- **Neighbor-aware replacements** - Check neighboring blocks and their states
-- **BlockState conditions** - React to block properties like repeater delay, door state, etc.
-- **Dynamic texture loading** - Load custom textures from resource packs
-- **JSON-based configuration** - Easy to configure without coding
-
 ## Installation
 
 1. Download the mod JAR file
