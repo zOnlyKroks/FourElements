@@ -12,14 +12,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record TextureReplacementRule(List<String> targetBlocks, List<PositionCondition> positionConditions,
-                                     List<NeighborCondition> neighborConditions, String replacementTexture) {
+                                     List<NeighborCondition> neighborConditions, List<BlockStateCondition> blockStateConditions,
+                                     String replacementTexture) {
     public TextureReplacementRule(List<String> targetBlocks,
                                   List<PositionCondition> positionConditions,
                                   List<NeighborCondition> neighborConditions,
+                                  List<BlockStateCondition> blockStateConditions,
                                   String replacementTexture) {
         this.targetBlocks = targetBlocks != null ? targetBlocks : new ArrayList<>();
         this.positionConditions = positionConditions != null ? positionConditions : new ArrayList<>();
         this.neighborConditions = neighborConditions != null ? neighborConditions : new ArrayList<>();
+        this.blockStateConditions = blockStateConditions != null ? blockStateConditions : new ArrayList<>();
         this.replacementTexture = replacementTexture;
     }
 
@@ -46,6 +49,12 @@ public record TextureReplacementRule(List<String> targetBlocks, List<PositionCon
 
         for (NeighborCondition condition : neighborConditions) {
             if (!condition.test(world, pos)) {
+                return false;
+            }
+        }
+
+        for (BlockStateCondition condition : blockStateConditions) {
+            if (!condition.test(state)) {
                 return false;
             }
         }
@@ -92,13 +101,16 @@ public record TextureReplacementRule(List<String> targetBlocks, List<PositionCon
         }
     }
 
-    public record NeighborCondition(Direction direction, int offsetX, int offsetY, int offsetZ, String targetBlock) {
-        public NeighborCondition(@Nullable Direction direction, int offsetX, int offsetY, int offsetZ, String targetBlock) {
+    public record NeighborCondition(Direction direction, int offsetX, int offsetY, int offsetZ, String targetBlock,
+                                    List<BlockStateCondition> blockStateConditions) {
+        public NeighborCondition(@Nullable Direction direction, int offsetX, int offsetY, int offsetZ, String targetBlock,
+                                 @Nullable List<BlockStateCondition> blockStateConditions) {
             this.direction = direction;
             this.offsetX = offsetX;
             this.offsetY = offsetY;
             this.offsetZ = offsetZ;
             this.targetBlock = targetBlock;
+            this.blockStateConditions = blockStateConditions != null ? blockStateConditions : new ArrayList<>();
         }
 
         public boolean test(BlockRenderView world, BlockPos pos) {
@@ -112,7 +124,18 @@ public record TextureReplacementRule(List<String> targetBlocks, List<PositionCon
             BlockState neighborState = world.getBlockState(checkPos);
             String neighborId = neighborState.getBlock().getTranslationKey();
 
-            return neighborId.contains(targetBlock);
+            if (!neighborId.contains(targetBlock)) {
+                return false;
+            }
+
+            // Check neighbor blockstate conditions
+            for (BlockStateCondition condition : blockStateConditions) {
+                if (!condition.test(neighborState)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public static NeighborCondition fromJson(JsonObject json) {
@@ -126,7 +149,38 @@ public record TextureReplacementRule(List<String> targetBlocks, List<PositionCon
             int offsetZ = json.has("offsetZ") ? json.get("offsetZ").getAsInt() : 0;
             String targetBlock = json.get("targetBlock").getAsString();
 
-            return new NeighborCondition(direction, offsetX, offsetY, offsetZ, targetBlock);
+            List<BlockStateCondition> blockStateConditions = new ArrayList<>();
+            if (json.has("blockStateConditions")) {
+                var conditionsArray = json.getAsJsonArray("blockStateConditions");
+                for (int i = 0; i < conditionsArray.size(); i++) {
+                    blockStateConditions.add(BlockStateCondition.fromJson(
+                            conditionsArray.get(i).getAsJsonObject()));
+                }
+            }
+
+            return new NeighborCondition(direction, offsetX, offsetY, offsetZ, targetBlock, blockStateConditions);
+        }
+    }
+
+    public record BlockStateCondition(String property, String value) {
+        public boolean test(BlockState state) {
+            var property = state.getProperties().stream()
+                    .filter(prop -> prop.getName().equals(this.property))
+                    .findFirst()
+                    .orElse(null);
+
+            if (property == null) {
+                return false;
+            }
+
+            var currentValue = state.get(property);
+            return currentValue.toString().equalsIgnoreCase(value);
+        }
+
+        public static BlockStateCondition fromJson(JsonObject json) {
+            String property = json.get("property").getAsString();
+            String value = json.get("value").getAsString();
+            return new BlockStateCondition(property, value);
         }
     }
 }

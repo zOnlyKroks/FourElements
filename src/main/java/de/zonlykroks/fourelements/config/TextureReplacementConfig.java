@@ -78,9 +78,18 @@ public class TextureReplacementConfig {
             }
         }
 
+        List<TextureReplacementRule.BlockStateCondition> blockStateConditions = new ArrayList<>();
+        if (json.has("blockStateConditions")) {
+            JsonArray conditionsArray = json.getAsJsonArray("blockStateConditions");
+            for (int i = 0; i < conditionsArray.size(); i++) {
+                blockStateConditions.add(TextureReplacementRule.BlockStateCondition.fromJson(
+                        conditionsArray.get(i).getAsJsonObject()));
+            }
+        }
+
         String replacementTexture = json.get("replacementTexture").getAsString();
 
-        return new TextureReplacementRule(targetBlocks, positionConditions, neighborConditions, replacementTexture);
+        return new TextureReplacementRule(targetBlocks, positionConditions, neighborConditions, blockStateConditions, replacementTexture);
     }
 
     private void createDefaultConfig() throws IOException {
@@ -157,6 +166,29 @@ public class TextureReplacementConfig {
 
         rule4.addProperty("replacementTexture", "minecraft:block/spruce_planks");
         rulesArray.add(rule4);
+
+        JsonObject rule5 = new JsonObject();
+        JsonArray targetBlocks5 = new JsonArray();
+        targetBlocks5.add("emerald_ore");
+        rule5.add("targetBlocks", targetBlocks5);
+
+        JsonArray neighborConditions5 = new JsonArray();
+        JsonObject neighborCondition5 = new JsonObject();
+        neighborCondition5.addProperty("direction", "NORTH");
+        neighborCondition5.addProperty("targetBlock", "repeater");
+
+        JsonArray blockStateConditions5 = new JsonArray();
+        JsonObject blockStateCondition5 = new JsonObject();
+        blockStateCondition5.addProperty("property", "delay");
+        blockStateCondition5.addProperty("value", "4");
+        blockStateConditions5.add(blockStateCondition5);
+        neighborCondition5.add("blockStateConditions", blockStateConditions5);
+
+        neighborConditions5.add(neighborCondition5);
+        rule5.add("neighborConditions", neighborConditions5);
+
+        rule5.addProperty("replacementTexture", "fourelements:block/replacement_texture");
+        rulesArray.add(rule5);
 
         root.add("rules", rulesArray);
 
