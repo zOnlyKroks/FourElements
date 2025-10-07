@@ -23,14 +23,21 @@ public class TextureReplacementConfig {
     private volatile List<TextureReplacementRule> rules = new ArrayList<>();
 
     public void load() {
-        load(ModConfig.getInstance().getRulesFilePath());
+        load(ModConfig.getInstance().getPresetRulesFile());
     }
 
     public void load(Path configFile) {
         try {
-            if (!Files.exists(CONFIG_DIR)) {
-                Files.createDirectories(CONFIG_DIR);
-                LOGGER.info("Created FourElements config directory at: {}", CONFIG_DIR);
+            Path presetDir = configFile.getParent();
+            if (!Files.exists(presetDir)) {
+                Files.createDirectories(presetDir);
+                LOGGER.info("Created preset directory at: {}", presetDir);
+            }
+
+            Path texturesDir = presetDir.resolve("textures");
+            if (!Files.exists(texturesDir)) {
+                Files.createDirectories(texturesDir);
+                LOGGER.info("Created textures directory at: {}", texturesDir);
             }
 
             if (!Files.exists(configFile)) {
@@ -101,105 +108,10 @@ public class TextureReplacementConfig {
     }
 
     private void createDefaultConfig(Path configFile) throws IOException {
+        // Empty default - presets are created by ModConfig
         JsonObject root = new JsonObject();
         JsonArray rulesArray = new JsonArray();
-
-        JsonObject rule1 = new JsonObject();
-        JsonArray targetBlocks1 = new JsonArray();
-        targetBlocks1.add("stone");
-        rule1.add("targetBlocks", targetBlocks1);
-
-        JsonArray posConditions1 = new JsonArray();
-        JsonObject posCondition1 = new JsonObject();
-        posCondition1.addProperty("axis", "y");
-        posCondition1.addProperty("operator", "%");
-        posCondition1.addProperty("value", 0);
-        posCondition1.addProperty("modulo", 2);
-        posConditions1.add(posCondition1);
-        rule1.add("positionConditions", posConditions1);
-
-        rule1.addProperty("replacementTexture", "minecraft:block/diamond_block");
-        rulesArray.add(rule1);
-
-        JsonObject rule2 = new JsonObject();
-        JsonArray targetBlocks2 = new JsonArray();
-        targetBlocks2.add("dirt");
-        rule2.add("targetBlocks", targetBlocks2);
-
-        JsonArray neighborConditions2 = new JsonArray();
-        JsonObject neighborCondition2 = new JsonObject();
-        neighborCondition2.addProperty("direction", "UP");
-        neighborCondition2.addProperty("targetBlock", "water");
-        neighborConditions2.add(neighborCondition2);
-        rule2.add("neighborConditions", neighborConditions2);
-
-        rule2.addProperty("replacementTexture", "minecraft:block/coarse_dirt");
-        rulesArray.add(rule2);
-
-        JsonObject rule3 = new JsonObject();
-        JsonArray targetBlocks3 = new JsonArray();
-        targetBlocks3.add("grass_block");
-        rule3.add("targetBlocks", targetBlocks3);
-
-        JsonArray posConditions3 = new JsonArray();
-        JsonObject posCondition3 = new JsonObject();
-        posCondition3.addProperty("axis", "x");
-        posCondition3.addProperty("operator", "%");
-        posCondition3.addProperty("value", 0);
-        posCondition3.addProperty("modulo", 3);
-        posConditions3.add(posCondition3);
-        rule3.add("positionConditions", posConditions3);
-
-        rule3.addProperty("replacementTexture", "minecraft:block/moss_block");
-        rulesArray.add(rule3);
-
-        JsonObject rule4 = new JsonObject();
-        JsonArray targetBlocks4 = new JsonArray();
-        targetBlocks4.add("oak_planks");
-        rule4.add("targetBlocks", targetBlocks4);
-
-        JsonArray posConditions4 = new JsonArray();
-        JsonObject posCondition4a = new JsonObject();
-        posCondition4a.addProperty("axis", "y");
-        posCondition4a.addProperty("operator", ">=");
-        posCondition4a.addProperty("value", 64);
-        posConditions4.add(posCondition4a);
-
-        JsonObject posCondition4b = new JsonObject();
-        posCondition4b.addProperty("axis", "y");
-        posCondition4b.addProperty("operator", "<=");
-        posCondition4b.addProperty("value", 70);
-        posConditions4.add(posCondition4b);
-        rule4.add("positionConditions", posConditions4);
-
-        rule4.addProperty("replacementTexture", "minecraft:block/spruce_planks");
-        rulesArray.add(rule4);
-
-        JsonObject rule5 = new JsonObject();
-        JsonArray targetBlocks5 = new JsonArray();
-        targetBlocks5.add("emerald_ore");
-        rule5.add("targetBlocks", targetBlocks5);
-
-        JsonArray neighborConditions5 = new JsonArray();
-        JsonObject neighborCondition5 = new JsonObject();
-        neighborCondition5.addProperty("direction", "NORTH");
-        neighborCondition5.addProperty("targetBlock", "repeater");
-
-        JsonArray blockStateConditions5 = new JsonArray();
-        JsonObject blockStateCondition5 = new JsonObject();
-        blockStateCondition5.addProperty("property", "delay");
-        blockStateCondition5.addProperty("value", "4");
-        blockStateConditions5.add(blockStateCondition5);
-        neighborCondition5.add("blockStateConditions", blockStateConditions5);
-
-        neighborConditions5.add(neighborCondition5);
-        rule5.add("neighborConditions", neighborConditions5);
-
-        rule5.addProperty("replacementTexture", "minecraft:block/gold_block");
-        rulesArray.add(rule5);
-
         root.add("rules", rulesArray);
-
         Files.writeString(configFile, GSON.toJson(root));
     }
 

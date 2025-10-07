@@ -34,6 +34,19 @@ public record TextureReplacementRule(List<String> targetBlocks, List<PositionCon
     }
 
     private static Identifier parseTextureIdentifier(String textureId) {
+        // Support preset-relative paths (e.g., "my_texture.png" or "textures/my_texture.png")
+        if (!textureId.contains(":") && (textureId.endsWith(".png") || textureId.startsWith("textures/"))) {
+            // This is a preset-relative texture path
+            String cleanPath = textureId;
+            if (cleanPath.startsWith("textures/")) {
+                cleanPath = cleanPath.substring("textures/".length());
+            }
+            if (cleanPath.endsWith(".png")) {
+                cleanPath = cleanPath.substring(0, cleanPath.length() - 4);
+            }
+            return Identifier.of("fourelements", "preset/" + cleanPath);
+        }
+
         if (textureId.contains(":")) {
             return Identifier.tryParse(textureId);
         } else {

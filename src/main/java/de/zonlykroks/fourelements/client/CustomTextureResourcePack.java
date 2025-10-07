@@ -1,5 +1,6 @@
 package de.zonlykroks.fourelements.client;
 
+import de.zonlykroks.fourelements.config.ModConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resource.*;
 import net.minecraft.resource.metadata.PackResourceMetadata;
@@ -16,7 +17,6 @@ import java.util.Optional;
 import java.util.Set;
 
 public class CustomTextureResourcePack implements ResourcePack {
-    private static final Path TEXTURES_DIR = FabricLoader.getInstance().getConfigDir().resolve("fourelements/textures");
     private static final String NAMESPACE = "fourelements";
     private final ResourcePackInfo info;
 
@@ -45,13 +45,24 @@ public class CustomTextureResourcePack implements ResourcePack {
         if (path.startsWith("textures/")) {
             String texturePath = path.substring("textures/".length());
 
-            if (texturePath.startsWith("block/")) {
-                texturePath = texturePath.substring("block/".length());
-            }
+            // Handle preset-relative textures (e.g., "preset/my_texture")
+            if (texturePath.startsWith("preset/")) {
+                String presetTexturePath = texturePath.substring("preset/".length());
+                if (!presetTexturePath.endsWith(".png")) {
+                    presetTexturePath += ".png";
+                }
 
-            Path textureFile = TEXTURES_DIR.resolve(texturePath);
-            if (Files.exists(textureFile) && Files.isRegularFile(textureFile)) {
-                return () -> Files.newInputStream(textureFile);
+                Path textureFile = ModConfig.getInstance().getPresetTexturesDir().resolve(presetTexturePath);
+                if (Files.exists(textureFile) && Files.isRegularFile(textureFile)) {
+                    return () -> Files.newInputStream(textureFile);
+                }
+            } else if (texturePath.startsWith("block/")) {
+                // Legacy support: check in current preset's textures dir
+                texturePath = texturePath.substring("block/".length());
+                Path textureFile = ModConfig.getInstance().getPresetTexturesDir().resolve(texturePath);
+                if (Files.exists(textureFile) && Files.isRegularFile(textureFile)) {
+                    return () -> Files.newInputStream(textureFile);
+                }
             }
         }
 
@@ -69,14 +80,16 @@ public class CustomTextureResourcePack implements ResourcePack {
         }
 
         try {
-            if (Files.exists(TEXTURES_DIR) && Files.isDirectory(TEXTURES_DIR)) {
-                Files.walk(TEXTURES_DIR)
+            Path texturesDir = ModConfig.getInstance().getPresetTexturesDir();
+            if (Files.exists(texturesDir) && Files.isDirectory(texturesDir)) {
+                Files.walk(texturesDir)
                         .filter(Files::isRegularFile)
                         .filter(path -> path.toString().endsWith(".png"))
                         .forEach(path -> {
                             try {
-                                String relativePath = TEXTURES_DIR.relativize(path).toString().replace('\\', '/');
-                                Identifier id = Identifier.of(NAMESPACE, "textures/block/" + relativePath);
+                                String relativePath = texturesDir.relativize(path).toString().replace('\\', '/');
+                                // Register as preset-relative paths
+                                Identifier id = Identifier.of(NAMESPACE, "textures/preset/" + relativePath);
                                 consumer.accept(id, () -> Files.newInputStream(path));
                             } catch (Exception ignored) {}
                         });

@@ -22,7 +22,7 @@ public class ModMenuImpl implements ModMenuApi {
 
     private Screen createConfigScreen(Screen parent) {
         ModConfig config = ModConfig.getInstance();
-        List<String> availableFiles = config.getAvailableRulesFiles();
+        List<String> availablePresets = config.getAvailablePresets();
 
         return YetAnotherConfigLib.createBuilder()
                 .title(Text.literal("FourElements Configuration"))
@@ -30,22 +30,25 @@ public class ModMenuImpl implements ModMenuApi {
                         .name(Text.literal("General"))
                         .tooltip(Text.literal("General mod settings"))
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Rules Configuration"))
+                                .name(Text.literal("Preset Configuration"))
                                 .description(OptionDescription.of(Text.literal(
-                                        "Select which JSON rules file to load.\n\n" +
-                                        "Available files in config/fourelements/:\n" +
-                                        String.join("\n", availableFiles)
+                                        "Select which preset to load.\n\n" +
+                                        "Available presets in config/fourelements/presets/:\n" +
+                                        String.join("\n", availablePresets) + "\n\n" +
+                                        "Each preset folder should contain:\n" +
+                                        "- rules.json (replacement rules)\n" +
+                                        "- textures/ (folder with .png textures)"
                                 )))
                                 .option(Option.<String>createBuilder()
-                                        .name(Text.literal("Rules File"))
+                                        .name(Text.literal("Active Preset"))
                                         .description(OptionDescription.of(Text.literal(
-                                                "Select which texture replacement rules file to use.\n" +
-                                                "Type the filename (e.g., texture_replacements.json)"
+                                                "Select which preset to use.\n" +
+                                                "Type the preset folder name (e.g., example_preset1, example_preset2)"
                                         )))
                                         .binding(
-                                                "texture_replacements.json",
-                                                config::getSelectedRulesFile,
-                                                config::setSelectedRulesFile
+                                                "example_preset1",
+                                                config::getSelectedPreset,
+                                                config::setSelectedPreset
                                         )
                                         .controller(StringControllerBuilder::create)
                                         .build())
@@ -94,7 +97,7 @@ public class ModMenuImpl implements ModMenuApi {
                 .save(() -> {
                     config.save();
 
-                    TextureReplacementManager.getInstance().reload();
+                    TextureReplacementManager.getInstance().reloadWithResourcePack();
                 })
                 .build()
                 .generateScreen(parent);

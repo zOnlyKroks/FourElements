@@ -47,8 +47,8 @@ public class TextureReplacementManager {
         modConfig.load();
         config.load();
 
-        LOGGER.info("Texture Replacement Manager initialized with {} rules from {}",
-                config.getRules().size(), modConfig.getSelectedRulesFile());
+        LOGGER.info("Texture Replacement Manager initialized with {}",
+                config.getRules().size());
     }
 
     public void initializeAtlas() {
@@ -68,10 +68,37 @@ public class TextureReplacementManager {
         cacheHits = 0;
         cacheMisses = 0;
 
+        modConfig.load();
         config.load();
 
-        LOGGER.info("Reloaded {} texture replacement rules from {}",
-                config.getRules().size(), modConfig.getSelectedRulesFile());
+        LOGGER.info("Reloaded {} texture replacement rules",
+                config.getRules().size());
+    }
+
+    public void reloadWithResourcePack() {
+        LOGGER.info("Full reload with resource pack refresh");
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        // Clear everything
+        spriteCache.clear();
+        cacheHits = 0;
+        cacheMisses = 0;
+        cachedAtlas = null;
+        cachedSpriteFinder = null;
+
+        // Reload configs
+        modConfig.load();
+        config.load();
+
+        // Trigger full resource reload to pick up new textures
+        if (client != null) {
+            client.execute(() -> {
+                LOGGER.info("Triggering resource pack reload for preset change");
+                client.reloadResources();
+            });
+        }
+
+        LOGGER.info("Full reload initiated for preset: {}", modConfig.getSelectedPreset());
     }
 
     public void clearCacheAndAtlas() {
